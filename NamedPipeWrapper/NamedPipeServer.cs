@@ -6,6 +6,16 @@ using System.IO.Pipes;
 
 namespace NamedPipeWrapper
 {
+    public class NamedPipeServer<TRead, TWrite> : NamedPipeWrapper.Server<TRead, TWrite> where TRead : class where TWrite : class
+    {
+        public NamedPipeServer(string pipeName) : base(pipeName, null)
+        {
+        }
+
+        public NamedPipeServer(string pipeName, PipeSecurity pipeSecurity) : base(pipeName, pipeSecurity)
+        {
+        }
+    }
     /// <summary>
     /// Wraps a <see cref="NamedPipeServerStream"/> and provides multiple simultaneous client connection handling.
     /// </summary>
