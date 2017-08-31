@@ -228,4 +228,43 @@ namespace NamedPipeWrapper
             return new NamedPipeClientStream(serverName, pipeName, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.WriteThrough);
         }
     }
+
+    public class NamedPipeClientSync<TRead, TWrite> : NamedPipeClient<TRead, TWrite> where TRead : class where TWrite : class
+    {
+
+        private TRead _response = null;
+
+        private readonly ManualResetEvent _waitHandle = new ManualResetEvent(false);
+        public NamedPipeClientSync(string pipeName, string serverName = ".") : base(pipeName, serverName)
+        {
+
+            ServerMessage += (NamedPipeConnection<TRead, TWrite> conn, TRead message) =>
+            {
+                _response = message;
+                _waitHandle.Set();
+            };
+
+            Error += (Exception ex) =>
+            {
+                throw ex;
+            };
+        }
+
+        public TRead PushMessage(TWrite request, int timeoutSeconds = 30)
+        {
+            base.PushMessage(request);
+
+            if (!_waitHandle.WaitOne(TimeSpan.FromSeconds(timeoutSeconds)))
+            {
+                throw new TimeoutException();
+            }
+
+            dynamic returnResponse = _response;
+            _response = null;
+
+            _waitHandle.Reset();
+
+            return returnResponse;
+        }
+    }
 }
